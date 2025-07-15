@@ -21,16 +21,20 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.containerPort }}
           volumeMounts:
             - name: html-volume
               mountPath: /usr/share/nginx/html
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
       volumes:
         - name: html-volume
           configMap:
             name: {{ .Values.configMapName }}
-
-{{- define "frontend.chart" -}}
-{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-{{- end }}

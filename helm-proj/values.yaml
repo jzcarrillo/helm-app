@@ -1,12 +1,12 @@
 alb:
   name: alb-nginx
   replicaCount: 1
-
+  namespace: helm-app
   image:
     repository: nginx
     tag: stable
 
-  configMapName: alb-nginx-config
+  configMapName: alb-nginx-html
   tlsSecretName: alb-nginx-tls
 
   service:
@@ -20,7 +20,7 @@ alb:
       targetPort: 443
       nodePort: 31443
 
-namespace: helm-app
+
 
 replicaCount: 1
 
@@ -30,7 +30,7 @@ image:
 
 containerPort: 80
 
-configMapName: frontend-html
+configMapName: frontend-html-config
 
 service:                 # ✅ ADD THIS BLOCK
   type: NodePort

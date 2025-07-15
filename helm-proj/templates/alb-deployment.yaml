@@ -33,4 +33,4 @@ spec:
             secretName: {{ .Values.alb.tlsSecretName | default "alb-nginx-tls" }}
         - name: nginx-config
           configMap:
-            name: {{ .Values.alb.configMapName | default "alb-nginx-config" }}
+            name: {{ .Values.alb.configMapName | default "alb-nginx-html" }}

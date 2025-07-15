@@ -11,3 +11,6 @@ spec:
     - protocol: TCP
       port: {{ .Values.service.port | default 80 }}
       targetPort: {{ .Values.service.targetPort | default 80 }}
+      {{- if or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer") }}
+      nodePort: {{ .Values.service.nodePort | default 30080 }}
+      {{- end }}
