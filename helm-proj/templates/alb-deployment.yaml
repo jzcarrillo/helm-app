@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.alb.name | default "alb-nginx" }}
+  labels:
+    app: {{ .Values.alb.name | default "alb-nginx" }}
+spec:
+  replicas: {{ .Values.alb.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.alb.name | default "alb-nginx" }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.alb.name | default "alb-nginx" }}
+    spec:
+      containers:
+        - name: nginx
+          image: "{{ .Values.alb.image.repository }}:{{ .Values.alb.image.tag }}"
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          volumeMounts:
+            - name: tls-secret
+              mountPath: /etc/nginx/tls
+              readOnly: true
+      volumes:
+        - name: tls-secret
+          secret:
+            secretName: {{ .Values.alb.tlsSecretName | default "alb-nginx-tls" }}

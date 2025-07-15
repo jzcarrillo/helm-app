@@ -1,0 +1,28 @@
+{{- /*
+alb-service.yaml
+Exposes the ALB‑Nginx reverse‑proxy via NodePort or another type, driven by values.yaml
+*/ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.alb.name | default "alb-nginx" }}
+  {{- /* Allow overriding namespace via Helm release namespace */}}
+  labels:
+    app: {{ .Values.alb.name | default "alb-nginx" }}
+spec:
+  type: {{ .Values.alb.service.type | default "NodePort" }}
+  selector:
+    app: {{ .Values.alb.name | default "alb-nginx" }}
+  ports:
+    - name: http
+      port: {{ .Values.alb.service.http.port | default 80 }}
+      targetPort: {{ .Values.alb.service.http.targetPort | default 80 }}
+      {{- if eq (lower (.Values.alb.service.type | default "NodePort")) "nodeport" }}
+      nodePort: {{ .Values.alb.service.http.nodePort | default 30080 }}
+      {{- end }}
+    - name: https
+      port: {{ .Values.alb.service.https.port | default 443 }}
+      targetPort: {{ .Values.alb.service.https.targetPort | default 443 }}
+      {{- if eq (lower (.Values.alb.service.type | default "NodePort")) "nodeport" }}
+      nodePort: {{ .Values.alb.service.https.nodePort | default 30443 }}
+      {{- end }}
