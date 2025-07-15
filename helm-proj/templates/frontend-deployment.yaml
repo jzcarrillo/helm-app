@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "frontend.fullname" . }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  labels:
+    app: {{ include "frontend.name" . }}
+    chart: {{ include "frontend.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "frontend.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "frontend.name" . }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+          volumeMounts:
+            - name: html-volume
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: html-volume
+          configMap:
+            name: {{ .Values.configMapName }}
+
+{{- define "frontend.chart" -}}
+{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+{{- end }}

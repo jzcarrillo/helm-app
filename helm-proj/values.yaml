@@ -14,8 +14,26 @@ alb:
     http:
       port: 80
       targetPort: 80
-      nodePort: 30080
+      nodePort: 30100
     https:
       port: 443
       targetPort: 443
-      nodePort: 30443
+      nodePort: 31443
+
+namespace: helm-app
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: alpine
+
+containerPort: 80
+
+configMapName: frontend-html
+
+service:                 # ✅ ADD THIS BLOCK
+  type: NodePort
+  port: 80
+  targetPort: 80
+  nodePort: 30200
