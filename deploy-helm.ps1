@@ -1,11 +1,7 @@
 param(
-    [string]$ReleaseName = "alb-nginx",
-    [string]$ChartPath   = "./helm-proj",
-    [string]$Namespace   = "helm-poc",
-    [string]$ValuesFile  = "./helm-proj/values.yaml",
-    [switch]$Wait,                # Adds --wait to Helm install
-    [switch]$DebugMode,           # Verbose output
-    [switch]$Validate             # Runs lint and dry‑run before install
+    [string]$ReleaseName = "helm-appv1",
+    [string]$Namespace   = "helm-app",
+    [string]$ChartPath   = "./helm-proj"
 )
 
 function Write-Info ($msg)  { Write-Host "[INFO] $msg" -ForegroundColor Cyan }
@@ -15,86 +11,114 @@ function Write-Err  ($msg)  { Write-Host "[ERR]  $msg" -ForegroundColor Red }
 
 function Require-Command ($cmd) {
     if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
-        Write-Err "Command '$cmd' not found. Please install it first."
+        Write-Err "Command '$cmd' not found. Please install it."
         exit 1
     }
 }
 
-# --- Pre‑flight checks -----------------------------------------------------
-Require-Command kubectl
 Require-Command helm
+Require-Command kubectl
 
-if ($DebugMode) { $VerbosePreference = "Continue" }
-
-# --- Ensure namespace exists ----------------------------------------------
-Write-Info "Checking if namespace '$Namespace' exists..."
-$ns = kubectl get namespace $Namespace -o jsonpath='{.metadata.name}' 2>$null
-if (-not $ns) {
-    Write-Info "Namespace not found. Creating..."
-    kubectl create namespace $Namespace | Out-Null
-    Write-OK "Namespace '$Namespace' created."
+# Step 1: Uninstall existing release
+Write-Info "Uninstalling existing release '$ReleaseName' from namespace '$Namespace'..."
+helm uninstall $ReleaseName -n $Namespace
+if ($LASTEXITCODE -eq 0) {
+    Write-OK "Uninstalled release '$ReleaseName'."
 } else {
-    Write-OK "Namespace '$Namespace' already exists."
+    Write-Info "Release not found or already removed."
 }
 
-# --- Always start fresh: uninstall existing release if present -------------
-Write-Info "Checking for existing Helm release '$ReleaseName'..."
-$releaseExists = helm list -n $Namespace --short | Where-Object { $_ -eq $ReleaseName }
-if ($releaseExists) {
-    Write-Warn "Existing release found. Uninstalling..."
-    helm uninstall $ReleaseName -n $Namespace
-    if ($LASTEXITCODE -ne 0) {
-        Write-Err "Failed to uninstall existing release '$ReleaseName'."
-        exit 1
-    }
-    Start-Sleep -Seconds 3
-    Write-OK "Previous release '$ReleaseName' uninstalled."
-} else {
-    Write-OK "No existing release found."
-}
-
-# --- Optional validation (lint + dry‑run) ---------------------------------
-if ($Validate) {
-    Write-Info "Running 'helm lint'..."
-    helm lint $ChartPath
-    if ($LASTEXITCODE -ne 0) {
-        Write-Err "Helm lint failed. Aborting."
-        exit 1
-    }
-    Write-OK "Helm lint passed."
-
-    Write-Info "Running 'helm install --dry-run'..."
-    $dryRunArgs = @(
-        "install", $ReleaseName, $ChartPath,
-        "--namespace", $Namespace,
-        "--values", $ValuesFile,
-        "--dry-run",
-        "--debug"
-    )
-    helm @dryRunArgs
-    if ($LASTEXITCODE -ne 0) {
-        Write-Err "Helm dry‑run failed. Aborting deployment."
-        exit 1
-    }
-    Write-OK "Dry‑run successful."
-}
-
-# --- Fresh install ---------------------------------------------------------
-Write-Info "Installing Helm release '$ReleaseName'..."
-$helmInstallArgs = @(
-    "install", $ReleaseName, $ChartPath,
-    "--namespace", $Namespace,
-    "--values", $ValuesFile
-)
-if ($Wait) { $helmInstallArgs += "--wait" }
-
-helm @helmInstallArgs
+# Step 2: Helm lint
+Write-Info "Running 'helm lint'..."
+helm lint $ChartPath
 if ($LASTEXITCODE -ne 0) {
-    Write-Err "Helm install failed."
-    exit $LASTEXITCODE
+    Write-Err "Helm lint failed. Aborting."
+    exit 1
+}
+Write-OK "Helm lint passed."
+
+# Step 3: Dry-run install
+Write-Info "Running dry-run Helm install..."
+helm install $ReleaseName $ChartPath -n $Namespace --dry-run --debug
+if ($LASTEXITCODE -ne 0) {
+    Write-Err "Dry-run failed. Aborting."
+    exit 1
+}
+Write-OK "Dry-run successful."
+
+# Step 4: Real Helm install
+Write-Info "Performing actual Helm install..."
+helm install $ReleaseName $ChartPath -n $Namespace --wait --debug
+if ($LASTEXITCODE -ne 0) {
+    Write-Err "Helm install failed. Aborting."
+    exit 1
 }
 Write-OK "Helm release '$ReleaseName' installed successfully."
 
-# --- Post‑deploy summary ---------------------------------------------------
-Write-Info "Listing resources in namespace '$Namespace'..."
-kubectl get all -n $Namespace
+# Step 5: Show pods
+Write-Info "Getting pods in namespace '$Namespace'..."
+kubectl get pods -n $Namespace
+
+# Step 6: Show services
+Write-Info "Getting services in namespace '$Namespace'..."
+kubectl get service -n $Namespace
+
+# Step 7: Check if ALB and frontend are accessible
+Write-Info "Checking access to NodePort services..."
+
+# Get NodePorts
+$albPort = kubectl get svc alb-nginx -n $Namespace -o=jsonpath="{.spec.ports[0].nodePort}"
+$frontendPort = kubectl get svc frontend -n $Namespace -o=jsonpath="{.spec.ports[0].port}"
+
+# Use Docker Desktop’s node IP
+$nodeIP = "localhost"
+
+# Check ALB
+if ($albPort) {
+    $albURL = "https://${nodeIP}:${albPort}"
+    Write-Info "Testing ALB at $albURL ..."
+    try {
+        add-type @"
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+public class TrustAllCertsPolicy : ICertificatePolicy {
+    public bool CheckValidationResult(ServicePoint srvPoint, X509Certificate certificate, WebRequest request, int certificateProblem) {
+        return true;
+    }
+}
+"@
+        [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+
+        $albResponse = Invoke-WebRequest -Uri $albURL -UseBasicParsing -TimeoutSec 5
+        if ($albResponse.Content -match "Hello from Helm Frontend!") {
+            Write-OK "ALB responded correctly: Hello from Helm Frontend!"
+        } else {
+            Write-Warn "ALB responded but did not return expected content:"
+            Write-Host $albResponse.Content
+        }
+    } catch {
+        Write-Err "ALB check failed. $_"
+    }
+} else {
+    Write-Warn "ALB NodePort not found."
+}
+
+
+# Check Frontend
+if ($frontendPort) {
+    Write-Info "Testing Frontend at http://${nodeIP}:${frontendPort} ..."
+    try {
+        $frontendResponse = Invoke-WebRequest -Uri "http://${nodeIP}:${frontendPort}" -UseBasicParsing -TimeoutSec 5
+        if ($frontendResponse.StatusCode -eq 200) {
+            Write-OK "Frontend responded with status: $($frontendResponse.StatusCode)"
+        } else {
+            Write-Warn "Frontend returned unexpected status: $($frontendResponse.StatusCode)"
+        }
+    } catch {
+        Write-Warn "Frontend not accessible at http://${nodeIP}:${frontendPort}"
+    }
+} else {
+    Write-Warn "Frontend NodePort not found."
+}
+
+Write-OK "Deployment and validation complete."
