@@ -2,6 +2,7 @@ alb:
   name: alb-nginx
   replicaCount: 1
   namespace: helm-app
+  backendHostTpl: "alb-nginx-frontend.{{ .Values.alb.namespace }}"
   image:
     repository: nginx
     tag: stable
@@ -12,6 +13,7 @@ alb:
   service:
     type: NodePort
     http:
+      enabled: false
       port: 80
       targetPort: 80
       nodePort: 30100
@@ -20,7 +22,9 @@ alb:
       targetPort: 443
       nodePort: 31443
 
-
+# ---------------------------
+# Frontend chart values
+# ---------------------------
 
 replicaCount: 1
 
@@ -32,7 +36,7 @@ containerPort: 80
 
 configMapName: frontend-html-config
 
-service:                 # ✅ ADD THIS BLOCK
+service:
   type: NodePort
   port: 80
   targetPort: 80

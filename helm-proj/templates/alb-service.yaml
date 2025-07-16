@@ -14,12 +14,14 @@ spec:
   selector:
     app: {{ .Values.alb.name | default "alb-nginx" }}
   ports:
+    {{- if .Values.alb.service.http.enabled }}
     - name: http
       port: {{ .Values.alb.service.http.port | default 80 }}
       targetPort: {{ .Values.alb.service.http.targetPort | default 80 }}
       {{- if eq (lower (.Values.alb.service.type | default "NodePort")) "nodeport" }}
       nodePort: {{ .Values.alb.service.http.nodePort | default 30080 }}
       {{- end }}
+     {{- end }}  
     - name: https
       port: {{ .Values.alb.service.https.port | default 443 }}
       targetPort: {{ .Values.alb.service.https.targetPort | default 443 }}
