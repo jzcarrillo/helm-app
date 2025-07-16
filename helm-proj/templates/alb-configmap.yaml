@@ -10,5 +10,4 @@ metadata:
     meta.helm.sh/release-namespace: {{ .Release.Namespace }}
 data:
   default.conf: |
-{{ tpl (include "alb.defaultConf" .) . | replace "__BACKEND_HOST__" (tpl .Values.alb.backendHostTpl .)  | indent 4 }}
-
+{{ tpl (include "alb.defaultConf" .) . | indent 4 }}

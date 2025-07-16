@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.configMapName | default "alb-nginx-html" }}
+  name: {{ .Values.configMapName | default "frontend-html-config" }}
   namespace: {{ .Values.namespace | default .Release.Namespace }}
 data:
   index.html: |
