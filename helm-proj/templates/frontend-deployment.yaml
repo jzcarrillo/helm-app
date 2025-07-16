@@ -1,34 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "frontend.fullname" . }}
+  name: frontend
   namespace: {{ .Values.namespace | default .Release.Namespace }}
   labels:
-    app: {{ include "frontend.name" . }}
-    chart: {{ include "frontend.chart" . }}
+    app: frontend
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "frontend.name" . }}
+      app: frontend  # <-- fixed label selector
   template:
     metadata:
       labels:
-        app: {{ include "frontend.name" . }}
+        app: frontend  # <-- fixed pod label
     spec:
       containers:
-        - name: {{ .Chart.Name }}
+        - name: frontend
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.containerPort }}
           volumeMounts:
-            # Clear nginx default content
             - name: html-clear
               mountPath: /usr/share/nginx/html
-            # Mount only the index.html from ConfigMap
             - name: html-volume
               mountPath: /usr/share/nginx/html/index.html
               subPath: index.html
@@ -40,10 +38,8 @@ spec:
               cpu: 250m
               memory: 256Mi
       volumes:
-        # Clears the default html files
         - name: html-clear
           emptyDir: {}
-        # Provides your custom index.html
         - name: html-volume
           configMap:
             name: {{ .Values.configMapName }}
