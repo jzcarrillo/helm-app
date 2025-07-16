@@ -2,14 +2,12 @@ alb:
   name: alb-nginx
   replicaCount: 1
   namespace: helm-app
-  backendHostTpl: "alb-nginx-frontend.{{ .Values.alb.namespace }}"
+  backendHostTpl: "frontend.{{ .Values.alb.namespace }}"
   image:
     repository: nginx
     tag: stable
-
   configMapName: alb-nginx-html
   tlsSecretName: alb-nginx-tls
-
   service:
     type: NodePort
     http:
@@ -26,11 +24,14 @@ alb:
 # Frontend chart values
 # ---------------------------
 
+fullnameOverride: frontend
+
 replicaCount: 1
 
 image:
   repository: nginx
-  tag: alpine
+  tag: latest
+  imagePullPolicy: Always
 
 containerPort: 80
 
@@ -40,4 +41,3 @@ service:
   type: ClusterIP
   port: 80
   targetPort: 80
-
