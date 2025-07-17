@@ -80,6 +80,6 @@ app.post('/submit', submitLimiter, async (req, res) => {
 });
 
 // === Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ API Gateway running on port ${PORT}`);
 });
