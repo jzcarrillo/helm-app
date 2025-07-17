@@ -6,11 +6,11 @@ metadata:
 spec:
   selector:
     app: frontend
-  type: {{ .Values.service.type | default "ClusterIP" }}
+  type: {{ .Values.frontend.service.type | default "ClusterIP" }}
   ports:
     - protocol: TCP
-      port: {{ .Values.service.port | default 80 }}
-      targetPort: {{ .Values.service.targetPort | default 80 }}
-      {{- if or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer") }}
-      nodePort: {{ .Values.service.nodePort | default 30080 }}
+      port: {{ .Values.frontend.service.port | default 80 }}
+      targetPort: {{ .Values.frontend.service.targetPort | default 80 }}
+      {{- if or (eq .Values.frontend.service.type "NodePort") (eq .Values.frontend.service.type "LoadBalancer") }}
+      nodePort: {{ .Values.frontend.service.nodePort | default 30080 }}
       {{- end }}

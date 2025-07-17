@@ -19,6 +19,19 @@ function Require-Command ($cmd) {
 Require-Command helm
 Require-Command kubectl
 
+# --- CLEANUP STEP ---
+Write-Info "Cleaning up namespace '$Namespace' to remove conflicting resources..."
+helm uninstall $ReleaseName -n $Namespace | Out-Null
+kubectl delete all --all -n $Namespace --ignore-not-found
+kubectl delete configmap --all -n $Namespace --ignore-not-found
+kubectl delete secret --all -n $Namespace --ignore-not-found
+
+Write-Info "Ensuring namespace '$Namespace' is clean..."
+kubectl delete namespace $Namespace --ignore-not-found
+kubectl wait --for=delete ns/$Namespace --timeout=60s 2>$null
+kubectl create namespace $Namespace
+Write-OK "Namespace '$Namespace' cleaned and recreated."
+
 # Step 1: Uninstall existing release
 Write-Info "Uninstalling existing release '$ReleaseName' from namespace '$Namespace'..."
 helm uninstall $ReleaseName -n $Namespace
@@ -67,10 +80,9 @@ kubectl get service -n $Namespace
 Write-Info "Checking access to NodePort services..."
 
 # Get NodePorts
-$albPort = kubectl get svc alb-nginx -n $Namespace -o=jsonpath="{.spec.ports[0].nodePort}"
-$frontendPort = kubectl get svc frontend -n $Namespace -o=jsonpath="{.spec.ports[0].port}"
+$albPort = kubectl get svc alb-nginx -n $Namespace -o=jsonpath="{.spec.ports[0].nodePort}" 2>$null
+$frontendPort = kubectl get svc frontend -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 
-# Use Docker Desktop’s node IP
 $nodeIP = "localhost"
 
 # Check ALB
@@ -88,7 +100,6 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 }
 "@
         [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
-
         $albResponse = Invoke-WebRequest -Uri $albURL -UseBasicParsing -TimeoutSec 5
         if ($albResponse.Content -match "Hello from Helm Frontend!") {
             Write-OK "ALB responded correctly: Hello from Helm Frontend!"
@@ -102,7 +113,6 @@ public class TrustAllCertsPolicy : ICertificatePolicy {
 } else {
     Write-Warn "ALB NodePort not found."
 }
-
 
 # Check Frontend
 if ($frontendPort) {

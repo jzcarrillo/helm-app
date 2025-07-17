@@ -1,11 +1,13 @@
+# Global namespace used for all charts
+namespace: helm-app
+
 alb:
-  name: alb-nginx
+  fullnameOverride: alb-nginx
   replicaCount: 1
-  namespace: helm-app
-  backendHostTpl: "frontend.{{ .Values.alb.namespace }}"
+  backendHostTpl: frontend.helm-app
   image:
     repository: nginx
-    tag: stable
+    tag: latest
   configMapName: alb-nginx-html
   tlsSecretName: alb-nginx-tls
   service:
@@ -20,24 +22,35 @@ alb:
       targetPort: 443
       nodePort: 31443
 
-# ---------------------------
-# Frontend chart values
-# ---------------------------
+frontend:
+  fullnameOverride: frontend
+  replicaCount: 1
+  image:
+    repository: nginx
+    tag: latest
+    imagePullPolicy: Always
+  containerPort: 80
+  configMapName: frontend-html-config
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
 
-fullnameOverride: frontend
-
-replicaCount: 1
-
-image:
-  repository: nginx
-  tag: latest
-  imagePullPolicy: Always
-
-containerPort: 80
-
-configMapName: frontend-html-config
-
-service:
-  type: ClusterIP
-  port: 80
-  targetPort: 80
+apiGateway:
+  fullnameOverride: api-gateway
+  replicaCount: 1
+  image:
+    repository: api-gateway
+    tag: latest
+    pullPolicy: Never
+  containerPort: 8081
+  service:
+    type: NodePort
+    port: 8081
+    targetPort: 8081
+    nodePort: 30081
+  resources:
+    requests:
+      cpu: "40m"
+    limits:
+      cpu: "200m"

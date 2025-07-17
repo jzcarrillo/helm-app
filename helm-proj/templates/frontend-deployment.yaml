@@ -1,45 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: {{ include "frontend.fullname" . }}
   namespace: {{ .Values.namespace | default .Release.Namespace }}
   labels:
-    app: frontend
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app: {{ include "frontend.fullname" . }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.frontend.replicaCount }}
   selector:
     matchLabels:
-      app: frontend  # <-- fixed label selector
+      app: {{ include "frontend.fullname" . }}
   template:
     metadata:
       labels:
-        app: frontend  # <-- fixed pod label
+        app: {{ include "frontend.fullname" . }}
     spec:
       containers:
-        - name: frontend
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          imagePullPolicy: IfNotPresent
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}
+          imagePullPolicy: {{ .Values.frontend.image.imagePullPolicy }}
           ports:
-            - containerPort: {{ .Values.containerPort }}
+            - containerPort: {{ .Values.frontend.containerPort }}
           volumeMounts:
-            - name: html-clear
-              mountPath: /usr/share/nginx/html
             - name: html-volume
-              mountPath: /usr/share/nginx/html/index.html
-              subPath: index.html
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 250m
-              memory: 256Mi
+              mountPath: /usr/share/nginx/html
+              readOnly: true
       volumes:
-        - name: html-clear
-          emptyDir: {}
         - name: html-volume
           configMap:
-            name: {{ .Values.configMapName }}
+            name: {{ .Values.frontend.configMapName }}

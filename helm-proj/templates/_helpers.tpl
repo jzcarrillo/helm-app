@@ -1,7 +1,13 @@
+{{/*
+Define backend host for ALB
+*/}}
 {{- define "alb.backendHost" -}}
-{{ .Values.alb.backendName | default "frontend" }}.{{ .Values.alb.namespace }}.svc.cluster.local
+{{ .Values.alb.backendHostTpl | default "frontend.helm-app" }}.svc.cluster.local
 {{- end }}
 
+{{/*
+Define the default NGINX config for ALB
+*/}}
 {{- define "alb.defaultConf" -}}
 server {
     listen 80;
@@ -19,11 +25,29 @@ server {
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
 
     location / {
-        proxy_pass http://{{ include "alb.backendHost" . }};
+        proxy_pass http://frontend.helm-app.svc.cluster.local;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
+
+    location /api/ {
+        proxy_pass http://api-gateway.helm-app.svc.cluster.local:8081;
+    }
 }
+{{- end }}
+
+{{/*
+Define frontend service name
+*/}}
+{{- define "frontend.name" -}}
+{{ .Chart.Name }}-frontend
+{{- end }}
+
+{{/*
+Define frontend full release name
+*/}}
+{{- define "frontend.fullname" -}}
+frontend
 {{- end }}
