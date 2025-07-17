@@ -131,4 +131,18 @@ if ($frontendPort) {
     Write-Warn "Frontend NodePort not found."
 }
 
-Write-OK "Deployment and validation complete."
+# Step 8: Show logs of API Gateway
+Write-Info "Getting logs from API Gateway pods..."
+
+$apiGatewayPods = kubectl get pods -n $Namespace -l app=$ReleaseName-api-gateway -o jsonpath="{.items[*].metadata.name}"
+
+if (-not $apiGatewayPods) {
+    Write-Warn "No API Gateway pods found."
+} else {
+    foreach ($pod in $apiGatewayPods.Split(" ")) {
+        Write-Info "Logs from pod: $pod"
+        kubectl logs $pod -n $Namespace
+        Write-Host "`n------------------------------------------------------------`n"
+    }
+}
+
