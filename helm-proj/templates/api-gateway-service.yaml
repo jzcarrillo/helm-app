@@ -10,4 +10,6 @@ spec:
   ports:
     - port: {{ .Values.apiGateway.service.port | default 8081 }}
       targetPort: {{ .Values.apiGateway.service.targetPort | default 8081 }}
+      {{- if eq (.Values.apiGateway.service.type | default "NodePort") "NodePort" }}
       nodePort: {{ .Values.apiGateway.service.nodePort | default 30081 }}
+      {{- end }}

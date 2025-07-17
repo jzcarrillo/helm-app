@@ -32,9 +32,6 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location /api/ {
-        proxy_pass http://api-gateway.helm-app.svc.cluster.local:8081;
-    }
 }
 {{- end }}
 
