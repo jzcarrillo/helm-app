@@ -48,3 +48,7 @@ Define frontend full release name
 {{- define "frontend.fullname" -}}
 frontend
 {{- end }}
+
+{{- define "api-gateway.fullname" -}}
+{{- printf "%s-%s" .Release.Name "api-gateway" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
