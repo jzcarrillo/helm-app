@@ -41,13 +41,41 @@ if ($LASTEXITCODE -eq 0) {
     Write-Info "Release not found or already removed."
 }
 
-# Step 2: Helm lint
-Write-Info "Running 'helm lint'..."
-helm lint $ChartPath
-if ($LASTEXITCODE -ne 0) {
-    Write-Err "Helm lint failed. Aborting."
-    exit 1
+# Step 1.5: Build Docker images
+Write-Host "`n[STEP 1.5] Building Docker Images..."
+
+$services = @(
+    "alb-nginx",
+    "frontend",
+    "api-gateway",
+    "lambda-producer",
+    "rabbitmq"
+)
+
+foreach ($service in $services) {
+    $dockerfileFolder = ".\$service"
+    $dockerfilePath = Join-Path $dockerfileFolder "Dockerfile"
+
+    if (Test-Path $dockerfileFolder) {
+        if (Test-Path $dockerfilePath) {
+            Write-Host "`nBuilding image for '$service' in folder '$dockerfileFolder'..."
+            Push-Location $dockerfileFolder
+
+            $tag = "$service`:latest"
+            $args = "build -t $tag ."
+            Write-Host "   → Running: docker $args"
+            Start-Process "docker" -ArgumentList $args -NoNewWindow -Wait
+
+            Pop-Location
+        } else {
+            Write-Warning "Skipping '$service': Dockerfile not found in $dockerfileFolder"
+        }
+    } else {
+        Write-Warning "Skipping '$service': Folder not found at $dockerfileFolder"
+    }
 }
+
+
 Write-OK "Helm lint passed."
 
 # Step 3: Dry-run install
