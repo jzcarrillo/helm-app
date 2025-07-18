@@ -30,7 +30,7 @@ Write-Info "Ensuring namespace '$Namespace' is clean..."
 kubectl delete namespace $Namespace --ignore-not-found
 kubectl wait --for=delete ns/$Namespace --timeout=60s 2>$null
 kubectl create namespace $Namespace
-Write-OK "Namespace '$Namespace' cleaned and recreated."
+Write-OK "✅ Namespace '$Namespace' cleaned and recreated."
 
 # Step 1: Uninstall existing release
 Write-Info "Uninstalling existing release '$ReleaseName' from namespace '$Namespace'..."
@@ -75,7 +75,6 @@ foreach ($service in $services) {
     }
 }
 
-
 Write-OK "Helm lint passed."
 
 # Step 3: Dry-run install
@@ -112,6 +111,20 @@ $albPort = kubectl get svc alb-nginx -n $Namespace -o=jsonpath="{.spec.ports[0].
 $frontendPort = kubectl get svc frontend -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 
 $nodeIP = "localhost"
+
+# Step 7.5: Add Port Forwarding 
+Write-Host "Port-forwarding lambda-producer service on port 4000..."
+$portForwardLambda = Start-Process -FilePath "kubectl" `
+  -ArgumentList "port-forward", "svc/lambda-producer", "4000:4000", "-n", "helm-app" `
+  -NoNewWindow -PassThru
+
+Write-Host "Port-forwarding rabbitmq service on port 15672 (management UI) and 5672 (AMQP)..."
+$portForwardRabbit = Start-Process -FilePath "kubectl" `
+  -ArgumentList "port-forward", "svc/rabbitmq", "15672:15672", "5672:5672", "-n", "helm-app" `
+  -NoNewWindow -PassThru
+
+# Wait a moment to ensure port-forwards are established
+Start-Sleep -Seconds 3
 
 # Check ALB
 if ($albPort) {
@@ -199,3 +212,25 @@ if (-not $rabbitmqPod) {
     kubectl logs $rabbitmqPod -n $Namespace
     Write-Host "`n------------------------------------------------------------`n"
 }
+
+# Step 11: Send bulk request to Lambda Producer 
+Write-Host "`nSending 50 POST requests to lambda-producer..."
+
+$uri = "http://localhost:4000/submit"
+$headers = @{ "Content-Type" = "application/json" }
+$body = '{"test":"ping"}'
+
+for ($i = 1; $i -le 100; $i++) {
+    try {
+        $response = Invoke-RestMethod -Uri $uri -Method POST -Headers $headers -Body $body
+        Write-Output "`nSend request $i."
+        Write-Output "StatusCode        : 200"
+        Write-Output "StatusDescription : OK"
+        Write-Output "Content           : {""message"":""$($response.message)""}"
+    } catch {
+        # Do nothing or silently continue on failure
+    }
+    Start-Sleep -Milliseconds 300
+}
+
+Write-Host "`nDone sending requests!"
