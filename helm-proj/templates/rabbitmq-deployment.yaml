@@ -21,9 +21,9 @@ spec:
             - containerPort: 15672
           env:
             - name: RABBITMQ_DEFAULT_USER
-              value: {{ .Values.rabbitmq.username }}
+              value: {{ .Values.rabbitmq.credentials.username }}
             - name: RABBITMQ_DEFAULT_PASS
-              value: {{ .Values.rabbitmq.password }}
+              value: {{ .Values.rabbitmq.credentials.password }}
           volumeMounts:
             - name: rabbitmq-data
               mountPath: /var/lib/rabbitmq
