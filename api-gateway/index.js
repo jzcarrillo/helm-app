@@ -61,7 +61,7 @@ app.post('/submit', submitLimiter, async (req, res) => {
   console.log(`[LOG] Incoming POST request to /submit from ${os.hostname()}`);
   try {
     const response = await axios.post(
-      'http://lambda-producer-service:4000/submit', // ✅ fixed endpoint
+      'http://lambda-producer:4000/submit', // ✅ fixed endpoint
       req.body,
       {
         headers: {
@@ -81,5 +81,5 @@ app.post('/submit', submitLimiter, async (req, res) => {
 
 // === Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ API Gateway running on port ${PORT}`);
+  console.log(` API Gateway running on port ${PORT}`);
 });
