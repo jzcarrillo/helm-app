@@ -50,5 +50,19 @@ frontend
 {{- end }}
 
 {{- define "api-gateway.fullname" -}}
-{{- printf "%s-%s" .Release.Name "api-gateway" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
+api-gateway
+{{- end }}
+
+{{/*
+Define lambda-producer name
+*/}}
+{{- define "lambda-producer.name" -}}
+lambda-producer
+{{- end }}
+
+{{/*
+Define lambda-producer full name (without release name)
+*/}}
+{{- define "lambda-producer.fullname" -}}
+lambda-producer
+{{- end }}

@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lambda-producer.fullname" . }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  labels:
+    app: {{ include "lambda-producer.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "lambda-producer.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "lambda-producer.name" . }}
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.lambdaProducer.image.repository }}:{{ .Values.lambdaProducer.image.tag }}"
+          imagePullPolicy: {{ .Values.lambdaProducer.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.lambdaProducer.containerPort }}

@@ -54,3 +54,16 @@ apiGateway:
       cpu: "40m"
     limits:
       cpu: "200m"
+
+lambdaProducer:
+  fullnameOverride: lambda-producer
+  replicaCount: 1
+  image:
+    repository: lambda-producer
+    tag: latest
+    pullPolicy: Never
+  containerPort: 4000
+  service:
+    type: ClusterIP
+    port: 4000
+    targetPort: 4000

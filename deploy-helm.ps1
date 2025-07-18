@@ -134,7 +134,7 @@ if ($frontendPort) {
 # Step 8: Show logs of API Gateway
 Write-Info "Getting logs from API Gateway pods..."
 
-$apiGatewayPods = kubectl get pods -n $Namespace -l app=$ReleaseName-api-gateway -o jsonpath="{.items[*].metadata.name}"
+$apiGatewayPods = kubectl get pods -n $Namespace -l app=api-gateway -o jsonpath="{.items[*].metadata.name}"
 
 if (-not $apiGatewayPods) {
     Write-Warn "No API Gateway pods found."
@@ -145,4 +145,3 @@ if (-not $apiGatewayPods) {
         Write-Host "`n------------------------------------------------------------`n"
     }
 }
-
