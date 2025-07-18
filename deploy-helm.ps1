@@ -145,3 +145,29 @@ if (-not $apiGatewayPods) {
         Write-Host "`n------------------------------------------------------------`n"
     }
 }
+
+# Step 9: Show logs of Lambda Producer
+Write-Info "Getting logs from Lambda Producer pod..."
+
+$lambdaProducerPod = kubectl get pods -n $Namespace -l app=lambda-producer -o jsonpath="{.items[0].metadata.name}"
+
+if (-not $lambdaProducerPod) {
+    Write-Warn "No Lambda Producer pod found."
+} else {
+    Write-Info "Logs from Lambda Producer pod: $lambdaProducerPod"
+    kubectl logs $lambdaProducerPod -n $Namespace
+    Write-Host "`n------------------------------------------------------------`n"
+}
+
+# Step 10: Show logs of RabbitMQ
+Write-Info "Getting logs from RabbitMQ pod..."
+
+$rabbitmqPod = kubectl get pods -n $Namespace -l app=rabbitmq -o jsonpath="{.items[0].metadata.name}"
+
+if (-not $rabbitmqPod) {
+    Write-Warn "No RabbitMQ pod found."
+} else {
+    Write-Info "Logs from RabbitMQ pod: $rabbitmqPod"
+    kubectl logs $rabbitmqPod -n $Namespace
+    Write-Host "`n------------------------------------------------------------`n"
+}

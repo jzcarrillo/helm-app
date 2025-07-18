@@ -16,6 +16,22 @@ spec:
         app: {{ include "lambda-producer.name" . }}
     spec:
       restartPolicy: Always
+
+      # 🛠️ Moved initContainers here
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for RabbitMQ...";
+              until nc -z rabbitmq.helm-app.svc.cluster.local 5672; do
+                echo "RabbitMQ not ready. Sleeping...";
+                sleep 3;
+              done
+              echo "RabbitMQ is ready!"
+
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.lambdaProducer.image.repository }}:{{ .Values.lambdaProducer.image.tag }}"

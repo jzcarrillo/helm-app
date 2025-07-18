@@ -22,7 +22,7 @@ app.use((req, res, next) => {
 
 let channel;
 const QUEUE = 'submit_queue'; // 🔄 updated to reflect final event-driven flow
-const RABBITMQ_URL = 'amqp://myuser:mypass@rabbitmq.lra-poc.svc.cluster.local:5672';
+const RABBITMQ_URL = 'amqp://myuser:mypass@rabbitmq.helm-app.svc.cluster.local:5672';
 
 /**
  * Connect to RabbitMQ with retries
