@@ -67,3 +67,24 @@ lambdaProducer:
     type: ClusterIP
     port: 4000
     targetPort: 4000
+
+rabbitmq:
+  image:
+    repository: rabbitmq
+    tag: "3-management"
+  replicaCount: 1
+
+  credentials:
+    username: myuser
+    password: mypass
+
+  ports:
+    amqp: 5672
+    management: 15672
+
+  pvc:
+    name: rabbitmq-pvc
+    accessMode: ReadWriteOnce
+    storage: 1Gi
+
+  secretName: rabbitmq-secret   

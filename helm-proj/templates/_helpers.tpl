@@ -66,3 +66,10 @@ Define lambda-producer full name (without release name)
 {{- define "lambda-producer.fullname" -}}
 lambda-producer
 {{- end }}
+
+{{/*
+Always return just "rabbitmq" as the name — no release name prefix.
+*/}}
+{{- define "rabbitmq.fullname" -}}
+rabbitmq
+{{- end }}

@@ -1,0 +1,15 @@
+{{- if .Values.rabbitmq }}
+{{- if .Values.rabbitmq.pvc }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.rabbitmq.pvc.name }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  accessModes:
+    - {{ .Values.rabbitmq.pvc.accessMode | default "ReadWriteOnce" }}
+  resources:
+    requests:
+      storage: {{ .Values.rabbitmq.pvc.storage | default "1Gi" }}
+{{- end }}
+{{- end }}
