@@ -88,3 +88,20 @@ rabbitmq:
     storage: 1Gi
 
   secretName: rabbitmq-secret   
+
+lambdaConsumer:
+  fullnameOverride: lambda-consumer
+  replicaCount: 1
+  image:
+    repository: lambda-consumer
+    tag: latest
+    pullPolicy: Never
+  containerPort: 4001
+  service:
+    type: ClusterIP
+    port: 4001
+    targetPort: 4001
+  rabbitmqUrl: amqp://myuser:mypass@rabbitmq.helm-app.svc.cluster.local:5672
+
+
+  

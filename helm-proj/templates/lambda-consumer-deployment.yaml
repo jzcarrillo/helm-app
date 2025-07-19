@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "lambda-consumer.fullname" . }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  labels:
+    app: {{ include "lambda-consumer.name" . }}
+spec:
+  replicas: {{ .Values.lambdaConsumer.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "lambda-consumer.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "lambda-consumer.name" . }}
+    spec:
+      restartPolicy: Always
+
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for RabbitMQ...";
+              until nc -z rabbitmq.{{ .Release.Namespace }}.svc.cluster.local 5672; do
+                echo "RabbitMQ not ready. Sleeping...";
+                sleep 3;
+              done
+              echo "RabbitMQ is ready!"
+
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.lambdaConsumer.image.repository }}:{{ .Values.lambdaConsumer.image.tag }}"
+          imagePullPolicy: {{ .Values.lambdaConsumer.image.pullPolicy }}
+          env:
+            - name: RABBITMQ_URL
+              value: "{{ .Values.lambdaConsumer.rabbitmqUrl }}"
+          ports:
+            - containerPort: {{ .Values.lambdaConsumer.containerPort }}

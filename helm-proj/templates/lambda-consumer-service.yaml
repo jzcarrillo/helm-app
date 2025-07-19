@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "lambda-consumer.fullname" . }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  labels:
+    app: {{ include "lambda-consumer.name" . }}
+spec:
+  type: {{ .Values.lambdaConsumer.service.type }}
+  selector:
+    app: {{ include "lambda-consumer.name" . }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.lambdaConsumer.service.port }}
+      targetPort: {{ .Values.lambdaConsumer.service.targetPort }}

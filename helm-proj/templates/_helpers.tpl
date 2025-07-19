@@ -73,3 +73,18 @@ Always return just "rabbitmq" as the name — no release name prefix.
 {{- define "rabbitmq.fullname" -}}
 rabbitmq
 {{- end }}
+
+{{/*
+Always return just "lambda-consumer" as the name
+*/}}
+{{- define "lambda-consumer.name" -}}
+lambda-consumer
+{{- end }}
+
+{{/*
+Always return just "lambda-consumer" as the name — no release name prefix.
+*/}}
+{{- define "lambda-consumer.fullname" -}}
+lambda-consumer
+{{- end }}
+
