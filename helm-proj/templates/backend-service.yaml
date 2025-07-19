@@ -1,15 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "backend.fullname" . }}
+  name: {{ include "backend-service.fullname" . }}
   namespace: {{ .Values.namespace | default .Release.Namespace }}
-  labels:
-    app: {{ include "backend.name" . }}
 spec:
-  type: {{ .Values.backend.service.type }}
+  type: {{ .Values.backendService.service.type }}
   selector:
-    app: {{ include "backend.name" . }}
+    app: {{ include "backend-service.name" . }}
   ports:
-    - protocol: TCP
-      port: {{ .Values.backend.service.port }}
-      targetPort: {{ .Values.backend.service.targetPort }}
+    - port: {{ .Values.backendService.service.port }}
+      targetPort: {{ .Values.backendService.service.targetPort }}

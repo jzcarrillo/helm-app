@@ -89,16 +89,30 @@ lambda-consumer
 {{- end }}
 
 {{/*
-Always return just "backend" as the name
+Always return just "backend-service" as the name
 */}}
-{{- define "backend.name" -}}
-backend
+{{- define "backend-service.name" -}}
+backend-service
 {{- end }}
 
 {{/*
-Always return just "backend" as the name — no release name prefix.
+Always return just "backend-service" as the fullname — no release name prefix
 */}}
-{{- define "backend.fullname" -}}
-backend
+{{- define "backend-service.fullname" -}}
+backend-service
 {{- end }}
 
+
+{{/*
+Always return just "redis" as the name
+*/}}
+{{- define "redis.name" -}}
+redis
+{{- end }}
+
+{{/*
+Always return just "redis" as the name — no release name prefix.
+*/}}
+{{- define "redis.fullname" -}}
+redis
+{{- end }}

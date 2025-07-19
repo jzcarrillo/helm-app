@@ -88,11 +88,40 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-OK "Dry-run successful."
 
-# Step 4: Real Helm install
-Write-Info "Performing actual Helm install..."
-helm install $ReleaseName $ChartPath -n $Namespace --wait --debug
+# Step 3.5: Check if backend deployment and pods are fully deleted before proceeding
+Write-Info "Verifying that 'backend' deployment and pods are fully deleted before real install..."
+
+$maxWaitSeconds = 60
+$waitInterval = 3
+$elapsed = 0
+
+while ($true) {
+    # Check deployment existence
+    $backendDeployment = kubectl get deployment backend -n $Namespace --ignore-not-found
+
+    # Check pods in Terminating state for backend
+    $backendPodsTerminating = kubectl get pods -n $Namespace -l app=backend --field-selector=status.phase=Terminating --ignore-not-found
+
+    if (-not $backendDeployment -and -not $backendPodsTerminating) {
+        Write-OK "'backend' deployment and terminating pods not found. Safe to proceed."
+        break
+    }
+
+    if ($elapsed -ge $maxWaitSeconds) {
+        Write-Err "'backend' deployment or terminating pods still exist after waiting $maxWaitSeconds seconds. Aborting."
+        exit 1
+    }
+
+    Write-Info "'backend' deployment or terminating pods still exist. Waiting..."
+    Start-Sleep -Seconds $waitInterval
+    $elapsed += $waitInterval
+}
+
+# Step 4: Real Helm install or upgrade
+Write-Info "Performing Helm upgrade --install..."
+helm upgrade --install $ReleaseName $ChartPath -n $Namespace --wait --debug
 if ($LASTEXITCODE -ne 0) {
-    Write-Err "Helm install failed. Aborting."
+    Write-Err "Helm upgrade/install failed. Aborting."
     exit 1
 }
 Write-OK "Helm release '$ReleaseName' installed successfully."
@@ -137,10 +166,15 @@ $portForwardLambda = Start-Process -FilePath "kubectl" `
 
 Write-Host "Port-forwarding backend service on port 3000..."
 $portForwardLambda = Start-Process -FilePath "kubectl" `
-  -ArgumentList "port-forward", "svc/backend", "3000:3000", "-n", "helm-app" `
+  -ArgumentList "port-forward", "svc/backend-service", "3000:3000", "-n", "helm-app" `
   -NoNewWindow -PassThru  
 # Wait a moment to ensure port-forwards are established
 
+Write-Host "Port-forwarding redis on port 6379..."
+$portForwardLambda = Start-Process -FilePath "kubectl" `
+  -ArgumentList "port-forward", "svc/redis", "6379:6379", "-n", "helm-app" `
+  -NoNewWindow -PassThru  
+# Wait a moment to ensure port-forwards are established
 Start-Sleep -Seconds 3
 
 # Check ALB

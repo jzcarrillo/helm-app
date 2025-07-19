@@ -2,25 +2,25 @@
 namespace: helm-app
 
 alb:
-  fullnameOverride: alb-nginx
-  replicaCount: 1
-  backendHostTpl: frontend.helm-app
-  image:
-    repository: nginx
-    tag: latest
-  configMapName: alb-nginx-html
-  tlsSecretName: alb-nginx-tls
-  service:
-    type: NodePort
-    http:
-      enabled: false
-      port: 80
-      targetPort: 80
-      nodePort: 30100
-    https:
-      port: 443
-      targetPort: 443
-      nodePort: 31443
+    fullnameOverride: alb-nginx
+    replicaCount: 1
+    backendHostTpl: frontend.helm-app
+    image:
+      repository: nginx
+      tag: latest
+    configMapName: alb-nginx-html
+    tlsSecretName: alb-nginx-tls
+    service:
+      type: NodePort
+      http:
+        enabled: false
+        port: 80
+        targetPort: 80
+        nodePort: 30100
+      https:
+        port: 443
+        targetPort: 443
+        nodePort: 31443
 
 frontend:
   fullnameOverride: frontend
@@ -103,19 +103,37 @@ lambdaConsumer:
     targetPort: 4001
   rabbitmqUrl: amqp://myuser:mypass@rabbitmq.helm-app.svc.cluster.local:5672
 
-backend:
+backendService:
   fullnameOverride: backend
   replicaCount: 1
+
   image:
     repository: backend
     tag: latest
     pullPolicy: Never
+
   containerPort: 3000
+
   service:
     type: ClusterIP
     port: 3000
     targetPort: 3000
+
   databaseUrl: postgres://user:password@postgresql.helm-app.svc.cluster.local:5432/mydb
 
+  redis:
+    host: redis
+    port: 6379
 
-  
+redis:
+  fullnameOverride: redis
+  replicaCount: 1
+  image:
+    repository: redis
+    tag: latest
+    pullPolicy: IfNotPresent
+  containerPort: 6379
+  service:
+    type: ClusterIP
+    port: 6379
+    targetPort: 6379

@@ -1,23 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "backend.fullname" . }}
+  name: {{ include "backend-service.fullname" . }}
   namespace: {{ .Values.namespace | default .Release.Namespace }}
   labels:
-    app: {{ include "backend.name" . }}
+    app: {{ include "backend-service.name" . }}
 spec:
-  replicas: {{ .Values.backend.replicaCount }}
+  replicas: {{ .Values.backendService.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "backend.name" . }}
+      app: {{ include "backend-service.name" . }}
   template:
     metadata:
       labels:
-        app: {{ include "backend.name" . }}
+        app: {{ include "backend-service.name" . }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
-          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          image: "{{ .Values.backendService.image.repository }}:{{ .Values.backendService.image.tag }}"
+          imagePullPolicy: {{ .Values.backendService.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.backend.containerPort }}
+            - containerPort: {{ .Values.backendService.containerPort }}
+          env:
+            - name: DATABASE_URL
+              value: "{{ .Values.backendService.databaseUrl }}"
+            - name: REDIS_HOST
+              value: "{{ .Values.backendService.redis.host }}"
+            - name: REDIS_PORT
+              value: "{{ .Values.backendService.redis.port }}"
