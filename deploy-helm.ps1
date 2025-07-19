@@ -50,7 +50,8 @@ $services = @(
     "api-gateway",
     "lambda-producer",
     "rabbitmq",
-    "lambda-consumer"
+    "lambda-consumer",
+    "backend"
 )
 
 foreach ($service in $services) {
@@ -129,10 +130,15 @@ $portForwardApiGateway = Start-Process -FilePath "kubectl" `
   -ArgumentList "port-forward", "svc/api-gateway", "8081:8081", "-n", "helm-app" `
   -NoNewWindow -PassThru
 
-  Write-Host "Port-forwarding lambda-consumer service on port 4001..."
+Write-Host "Port-forwarding lambda-consumer service on port 4001..."
 $portForwardLambda = Start-Process -FilePath "kubectl" `
   -ArgumentList "port-forward", "svc/lambda-consumer", "4001:4001", "-n", "helm-app" `
   -NoNewWindow -PassThru
+
+Write-Host "Port-forwarding backend service on port 3000..."
+$portForwardLambda = Start-Process -FilePath "kubectl" `
+  -ArgumentList "port-forward", "svc/backend", "3000:3000", "-n", "helm-app" `
+  -NoNewWindow -PassThru  
 # Wait a moment to ensure port-forwards are established
 
 Start-Sleep -Seconds 3

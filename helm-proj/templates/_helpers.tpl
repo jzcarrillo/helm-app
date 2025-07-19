@@ -88,3 +88,17 @@ Always return just "lambda-consumer" as the name — no release name prefix.
 lambda-consumer
 {{- end }}
 
+{{/*
+Always return just "backend" as the name
+*/}}
+{{- define "backend.name" -}}
+backend
+{{- end }}
+
+{{/*
+Always return just "backend" as the name — no release name prefix.
+*/}}
+{{- define "backend.fullname" -}}
+backend
+{{- end }}
+

@@ -103,5 +103,19 @@ lambdaConsumer:
     targetPort: 4001
   rabbitmqUrl: amqp://myuser:mypass@rabbitmq.helm-app.svc.cluster.local:5672
 
+backend:
+  fullnameOverride: backend
+  replicaCount: 1
+  image:
+    repository: backend
+    tag: latest
+    pullPolicy: Never
+  containerPort: 3000
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+  databaseUrl: postgres://user:password@postgresql.helm-app.svc.cluster.local:5432/mydb
+
 
   
