@@ -310,3 +310,25 @@ for ($i = 1; $i -le 100; $i++) {
 
     Start-Sleep -Milliseconds 500  # Throttle interval between requests
 }
+
+# Step X: Check Redis Health
+Write-Host "[INFO] Checking Redis health..." -ForegroundColor Cyan
+
+# Get the Redis pod name dynamically
+$redisPod = kubectl get pods -n helm-app -l app=redis -o jsonpath="{.items[0].metadata.name}"
+
+if (-not $redisPod) {
+    Write-Error "Redis pod not found."
+    exit 1
+}
+
+# Run 'redis-cli ping' inside the pod
+$pingResult = kubectl exec -n helm-app $redisPod -- redis-cli ping
+
+if ($pingResult -eq "PONG") {
+    Write-Host "[OK] Redis is healthy (PONG received)." -ForegroundColor Green
+}
+else {
+    Write-Error "Redis did not respond with PONG. Result: $pingResult"
+    exit 1
+}
