@@ -116,3 +116,17 @@ Always return just "redis" as the name — no release name prefix.
 {{- define "redis.fullname" -}}
 redis
 {{- end }}
+
+{{/*
+Always return just "postgres" as the name
+*/}}
+{{- define "postgres.name" -}}
+postgres
+{{- end }}
+
+{{/*
+Always return just "postgres" as the name — no release name prefix.
+*/}}
+{{- define "postgres.fullname" -}}
+postgres
+{{- end }}

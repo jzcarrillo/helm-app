@@ -51,7 +51,9 @@ $services = @(
     "lambda-producer",
     "rabbitmq",
     "lambda-consumer",
-    "backend"
+    "backend",
+    "redis,"
+    "postgres"
 )
 
 foreach ($service in $services) {
@@ -332,3 +334,19 @@ else {
     Write-Error "Redis did not respond with PONG. Result: $pingResult"
     exit 1
 }
+
+# Get the PostgreSQL pod name
+$pgPod = kubectl get pods -n helm-app -l app=postgres -o jsonpath="{.items[0].metadata.name}"
+
+# Run 'psql' command inside the pod to test connection
+$pgCheckCmd = "PGPASSWORD=mypass psql -U myuser -d mydb -c '\q'"
+$pgResult = kubectl exec -n helm-app $pgPod -- sh -c $pgCheckCmd
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "[OK] PostgreSQL is healthy (connection succeeded)." -ForegroundColor Green
+}
+else {
+    Write-Error "PostgreSQL connection failed. Output: $pgResult"
+    exit 1
+}
+
