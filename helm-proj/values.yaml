@@ -119,10 +119,10 @@ backendService:
     port: 3000
     targetPort: 3000
 
-  databaseUrl: postgres://user:password@postgres.helm-app.svc.cluster.local:5432/mydb
+  databaseUrl: postgres://myuser:mypass@postgres.helm-app.svc.cluster.local:5432/mydb
 
   redis:
-    host: redis
+    host: redis.helm-app.svc.cluster.local
     port: 6379
 
 redis:

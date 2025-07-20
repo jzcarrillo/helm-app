@@ -14,7 +14,7 @@ const redis = new Redis({ host: 'redis', port: 6379 });
 
 // PostgreSQL client
 const pgClient = new Client({
-  host: 'postgres',
+  host: 'postgres.helm-app.svc.cluster.local',
   port: 5432,
   user: 'myuser',
   password: 'mypass',
@@ -106,7 +106,7 @@ app.get('/', async (req, res) => {
 });
 
 // Start Express server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend listening on port ${PORT}`);
 });
 
