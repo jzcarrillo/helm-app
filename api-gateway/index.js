@@ -40,7 +40,8 @@ app.use((req, res, next) => {
 });
 
 // === Health and metrics
-app.get('/', (req, res) => res.send('✅ API Gateway UP'));
+app.get('/', (req, res) => res.send(`✅ API Gateway UP - Served by pod: ${os.hostname()}`));
+
 app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
