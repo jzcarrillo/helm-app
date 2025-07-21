@@ -33,7 +33,7 @@ Get-Process | Where-Object {
 }
 
 # List of ports to clean up
-$ports = @(3000, 4000, 4001, 5672, 6379, 8081, 15672)
+$ports = @(3000, 4000, 4001, 5672, 6379, 8081, 15672, 9090, 9093)
 
 foreach ($port in $ports) {
     Write-Host "Checking port $port..."
@@ -98,7 +98,8 @@ $services = @(
     "backend",
     "redis",
     "postgres",
-    "prometheus"
+    "prometheus",
+    "alertmanager"
 )
 
 foreach ($service in $services) {
@@ -227,6 +228,7 @@ $albPort = kubectl get svc alb-nginx -n $Namespace -o=jsonpath="{.spec.ports[0].
 $frontendPort = kubectl get svc frontend -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 $prometheusPort = kubectl get svc prometheus -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 $apigatewayPort = kubectl get svc api-gateway -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
+$prometheusPort = kubectl get svc api-gateway -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 
 $nodeIP = "localhost"
 
@@ -263,9 +265,14 @@ $portForwardRedis = Start-Process -FilePath "kubectl" `
   -NoNewWindow -PassThru  
 
 Write-Host "Port-forwarding prometheus on port 9090..."
-$portForwardRedis = Start-Process -FilePath "kubectl" `
+$portForwardPrometheus = Start-Process -FilePath "kubectl" `
   -ArgumentList "port-forward", "svc/prometheus", "9090:30900", "-n", "helm-app" `
-  -NoNewWindow -PassThru    
+  -NoNewWindow -PassThru  
+
+  Write-Host "Port-forwarding alertmanager on port 9093..."
+$portForwardAlertmanager = Start-Process -FilePath "kubectl" `
+  -ArgumentList "port-forward", "svc/alertmanager", "9093:9093", "-n", "helm-app" `
+  -NoNewWindow -PassThru   
 
 # Wait a moment to ensure port-forwards are established
 Start-Sleep -Seconds 3

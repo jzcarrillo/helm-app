@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.alertmanager.configMapName }}
+  namespace: {{ .Release.Namespace }}
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: '{{ .Values.alertmanager.smtp.smarthost }}'
+      smtp_from: '{{ .Values.alertmanager.smtp.from }}'
+      smtp_auth_username: '{{ .Values.alertmanager.smtp.username }}'
+      smtp_auth_password: '{{ .Values.alertmanager.smtp.password }}'
+      smtp_require_tls: {{ .Values.alertmanager.smtp.requireTLS }}
+
+    route:
+      receiver: '{{ .Values.alertmanager.route.receiver }}'
+      group_by: {{ toJson .Values.alertmanager.route.group_by }}
+      group_wait: '{{ .Values.alertmanager.route.group_wait }}'
+      group_interval: '{{ .Values.alertmanager.route.group_interval }}'
+      repeat_interval: '{{ .Values.alertmanager.route.repeat_interval }}'
+
+    receivers:
+      - name: '{{ .Values.alertmanager.receiver.name }}'
+        email_configs:
+          - to: '{{ .Values.alertmanager.receiver.email.to }}'
+            send_resolved: true
+            require_tls: true

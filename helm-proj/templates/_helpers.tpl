@@ -144,3 +144,17 @@ Always return just "prometheus" as the fullname — no release name prefix
 {{- define "prometheus.fullname" -}}
 prometheus
 {{- end }}
+
+{{/*
+Always return just "alertmanager" as the name
+*/}}
+{{- define "alertmanager.name" -}}
+alertmanager
+{{- end }}
+
+{{/*
+Always return just "alertmanager" as the fullname — no release name prefix
+*/}}
+{{- define "alertmanager.fullname" -}}
+alertmanager
+{{- end }}

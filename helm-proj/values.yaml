@@ -209,6 +209,7 @@ prometheus:
     enabled: true
     clusterRoleName: prometheus-cluster-role
     clusterRoleBindingName: prometheus-cluster-rolebinding
+    createClusterRole: false
 
   service:
     type: NodePort
@@ -218,3 +219,73 @@ prometheus:
 
   storage:
     type: emptyDir
+
+alertRules:
+  configMapName: alert-rules
+  fileName: alert-rules.yaml
+  rules:
+    groups:
+      - name: k8s-alerts
+        rules:
+          - alert: HighCPUUsage
+            expr: rate(process_cpu_seconds_total{job="api-gateway"}[1m]) > 0.0001
+            for: 30s
+            labels:
+              severity: warning
+            annotations:
+              summary: "High CPU usage detected on API Gateway"
+              description: "App-level CPU usage is above threshold on {{ $labels.instance }}."
+
+          - alert: TooManyReplicas
+            expr: count(up{job="api-gateway"}) > 2
+            labels:
+              severity: warning
+            annotations:
+              summary: "Too many API Gateway pods running"
+              description: "More than 3 API Gateway pods are currently up."
+
+          - alert: TooManyRequests
+            expr: rate(api_gateway_429_total[1m]) > 1
+            for: 30s
+            labels:
+              severity: critical
+            annotations:
+              summary: "Too many requests resulting in HTTP 429"
+              description: "Rate of HTTP 429 responses is above threshold."
+
+alertmanager:
+  replicaCount: 1
+
+  image:
+    repository: prom/alertmanager
+    tag: v0.27.0
+    pullPolicy: IfNotPresent
+
+  containerPort: 9093
+
+  service:
+    type: ClusterIP
+    port: 9093
+    targetPort: 9093
+
+  configMapName: alertmanager-config
+
+  smtp:
+    smarthost: sandbox.smtp.mailtrap.io:2525
+    from: alert@carrillo.com
+    username: 4ab84a792a9393
+    password: b2f63ca56b44c5
+    requireTLS: true
+
+  route:
+    receiver: email-alerts
+    group_by:
+      - alertname
+    group_wait: 30s
+    group_interval: 3m
+    repeat_interval: 2m
+
+  receiver:
+    name: email-alerts
+    email:
+      to: johnchristopher.carrillo@gmail.com
