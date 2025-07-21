@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prometheus.fullname" . }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  selector:
+    app: {{ include "prometheus.name" . }}
+  ports:
+    - port: {{ .Values.prometheus.service.port }}
+      targetPort: {{ .Values.prometheus.service.targetPort }}
+      {{- if and (eq .Values.prometheus.service.type "NodePort") (.Values.prometheus.service.nodePort) }}
+      nodePort: {{ .Values.prometheus.service.nodePort }}
+      {{- end }}

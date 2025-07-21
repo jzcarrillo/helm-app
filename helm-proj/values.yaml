@@ -186,3 +186,35 @@ postgres:
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+prometheus:
+  fullnameOverride: prometheus
+  replicaCount: 1
+
+  image:
+    repository: prom/prometheus
+    tag: v2.52.0
+    pullPolicy: IfNotPresent
+
+  containerPort: 9090
+
+  config:
+    configMapName: prometheus-config
+    rulesConfigMap: alert-rules
+
+  serviceAccount:
+    create: true
+    name: prometheus
+
+  rbac:
+    enabled: true
+    clusterRoleName: prometheus-cluster-role
+    clusterRoleBindingName: prometheus-cluster-rolebinding
+
+  service:
+    type: NodePort
+    port: 9090
+    targetPort: 9090
+    nodePort: 30900
+
+  storage:
+    type: emptyDir

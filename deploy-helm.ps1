@@ -97,7 +97,8 @@ $services = @(
     "lambda-consumer",
     "backend",
     "redis",
-    "postgres"
+    "postgres",
+    "prometheus"
 )
 
 foreach ($service in $services) {
@@ -224,6 +225,8 @@ Write-Info "Checking access to NodePort services..."
 # Get NodePorts
 $albPort = kubectl get svc alb-nginx -n $Namespace -o=jsonpath="{.spec.ports[0].nodePort}" 2>$null
 $frontendPort = kubectl get svc frontend -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
+$prometheusPort = kubectl get svc prometheus -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
+$apigatewayPort = kubectl get svc api-gateway -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 
 $nodeIP = "localhost"
 
@@ -258,6 +261,12 @@ Write-Host "Port-forwarding redis on port 6379..."
 $portForwardRedis = Start-Process -FilePath "kubectl" `
   -ArgumentList "port-forward", "svc/redis", "6379:6379", "-n", "helm-app" `
   -NoNewWindow -PassThru  
+
+Write-Host "Port-forwarding prometheus on port 9090..."
+$portForwardRedis = Start-Process -FilePath "kubectl" `
+  -ArgumentList "port-forward", "svc/prometheus", "9090:30900", "-n", "helm-app" `
+  -NoNewWindow -PassThru    
+
 # Wait a moment to ensure port-forwards are established
 Start-Sleep -Seconds 3
 

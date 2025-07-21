@@ -1,0 +1,22 @@
+{{- if .Values.prometheus.rbac.createClusterRole }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.prometheus.rbac.clusterRoleName }}  # Uses Helm value to set role name dynamically
+rules:
+  - apiGroups: [""]  # Core API group (no group) for core resources
+    resources:
+      - "nodes"            # Node-level metrics
+      - "nodes/metrics"    # Node metrics (may depend on metrics-server)
+      - "services"         # To discover services
+      - "endpoints"        # Service endpoints (Pod IPs behind Services)
+      - "pods"             # To monitor pods directly
+    verbs: ["get", "list", "watch"]  # Read-only permissions for discovery
+
+  - apiGroups: ["extensions"]  # Old API group for Ingress (for backward compatibility)
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+
+  - nonResourceURLs: ["/metrics"]  # To scrape raw `/metrics` endpoints directly (e.g., from kubelet or node-exporter)
+    verbs: ["get"]
+{{- end }}

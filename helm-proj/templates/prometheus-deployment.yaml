@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus.fullname" . }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+  labels:
+    app: {{ include "prometheus.name" . }}
+spec:
+  replicas: {{ .Values.prometheus.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "prometheus.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "prometheus.name" . }}
+    spec:
+      restartPolicy: Always
+      serviceAccountName: {{ .Values.prometheus.serviceAccount.name }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.image.tag }}"
+          imagePullPolicy: {{ .Values.prometheus.image.pullPolicy }}
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus/"
+          ports:
+            - containerPort: {{ .Values.prometheus.containerPort }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus
+            - name: rules-volume
+              mountPath: /etc/prometheus/rules
+            - name: data
+              mountPath: /prometheus
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ .Values.prometheus.config.configMapName }}
+        - name: rules-volume
+          configMap:
+            name: {{ .Values.prometheus.config.rulesConfigMap }}
+        - name: data
+          emptyDir: {} # Replace with PVC if needed

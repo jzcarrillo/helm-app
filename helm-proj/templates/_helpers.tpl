@@ -130,3 +130,17 @@ Always return just "postgres" as the name — no release name prefix.
 {{- define "postgres.fullname" -}}
 postgres
 {{- end }}
+
+{{/*
+Always return just "prometheus" as the name
+*/}}
+{{- define "prometheus.name" -}}
+prometheus
+{{- end }}
+
+{{/*
+Always return just "prometheus" as the fullname — no release name prefix
+*/}}
+{{- define "prometheus.fullname" -}}
+prometheus
+{{- end }}

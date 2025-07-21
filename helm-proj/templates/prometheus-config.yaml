@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.prometheus.config.configMapName }}
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: ['alertmanager.{{ .Values.namespace }}.svc.cluster.local:9093']
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'api-gateway'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: api-gateway
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            action: keep
+            regex: 8081
+
+    rule_files:
+      - /etc/prometheus/rules/*.yaml
