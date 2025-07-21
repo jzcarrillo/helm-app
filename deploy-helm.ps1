@@ -381,7 +381,7 @@ for ($i = 1; $i -le 100; $i++) {
     } catch {
         # Do nothing or silently continue on failure
     }
-    Start-Sleep -Milliseconds 300
+    Start-Sleep -Milliseconds 200
 }
 
 Write-Host "`nDone sending requests!"
@@ -392,7 +392,7 @@ Write-Host "`nSending 500 POST requests to api-gateway... Error 429 Too many req
 $uri = "http://localhost:8081/submit"
 $headers = @{ "Content-Type" = "application/json" }
 
-for ($i = 1; $i -le 500; $i++) {
+for ($i = 1; $i -le 1000; $i++) {
     $body = @{ message = "Test $i" } | ConvertTo-Json
 
     try {
@@ -408,7 +408,7 @@ for ($i = 1; $i -le 500; $i++) {
         Write-Output "Content           : {""message"":""Too many requests to /submit""}"
     }
 
-    Start-Sleep -Milliseconds 500  # Throttle interval between requests
+    Start-Sleep -Milliseconds 100  # Throttle interval between requests
 }
 
 # Step 12.1: Send bulk request to api-gateway
@@ -433,7 +433,7 @@ for ($i = 1; $i -le 500; $i++) {
         Write-Output "Content           : {""message"":""Too many requests to /submit""}"
     }
 
-    Start-Sleep -Milliseconds 500  # Throttle interval between requests
+    Start-Sleep -Milliseconds 200  # Throttle interval between requests
 }
 
 

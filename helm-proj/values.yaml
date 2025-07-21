@@ -245,7 +245,7 @@ alertRules:
               description: "More than 3 API Gateway pods are currently up."
 
           - alert: TooManyRequests
-            expr: rate(api_gateway_429_total[1m]) > 1
+            expr: rate(api_gateway_429_total[30s]) > 1
             for: 30s
             labels:
               severity: critical
@@ -273,17 +273,17 @@ alertmanager:
   smtp:
     smarthost: sandbox.smtp.mailtrap.io:2525
     from: alert@carrillo.com
-    username: 4ab84a792a9393
-    password: b2f63ca56b44c5
+    username: b7f52a0bab2c77
+    password: 0908ef63ffbf1a
     requireTLS: true
 
   route:
     receiver: email-alerts
     group_by:
       - alertname
-    group_wait: 30s
+    group_wait: 1m
     group_interval: 3m
-    repeat_interval: 2m
+    repeat_interval: 5m
 
   receiver:
     name: email-alerts

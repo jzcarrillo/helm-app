@@ -1,7 +1,7 @@
 $uri = "http://localhost:30081/submit"
 $headers = @{ "Content-Type" = "application/json" }
 
-for ($i = 1; $i -le 500; $i++) {
+for ($i = 1; $i -le 10000; $i++) {
     $body = @{ message = "Test $i" } | ConvertTo-Json
 
     try {
@@ -17,5 +17,5 @@ for ($i = 1; $i -le 500; $i++) {
         Write-Output "Content           : {""message"":""Too many requests to /submit""}"
     }
 
-    Start-Sleep -Milliseconds 500  # Adjust delay if needed
+    Start-Sleep -Milliseconds 5  # Adjust delay if needed
 }
