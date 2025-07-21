@@ -1,4 +1,4 @@
-$uri = "http://localhost:8081/submit"
+$uri = "http://localhost:30081/submit"
 $headers = @{ "Content-Type" = "application/json" }
 
 for ($i = 1; $i -le 500; $i++) {
