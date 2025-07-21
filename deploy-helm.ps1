@@ -32,6 +32,35 @@ Get-Process | Where-Object {
     }
 }
 
+# List of ports to clean up
+$ports = @(3000, 4000, 4001, 5672, 6379, 8081, 15672)
+
+foreach ($port in $ports) {
+    Write-Host "Checking port $port..."
+
+    $connections = netstat -aon | findstr ":$port"
+
+    if ($connections) {
+        $procIds = ($connections | ForEach-Object {
+            ($_ -split '\s+')[-1]
+        }) | Sort-Object -Unique
+
+        foreach ($procId in $procIds) {
+            try {
+                Write-Host "Killing process ID $procId using port $port..."
+                taskkill /PID $procId /F | Out-Null
+                Write-Host "Killed process ID $procId"
+            } catch {
+                Write-Warning ("Failed to kill process ID {0}: {1}" -f $procId, $_.Exception.Message)
+            }
+        }
+    } else {
+        Write-Host "Port $port is free."
+    }
+}
+
+
+
 Start-Sleep -Seconds 2
 
 # --- CLEANUP STEP ---
@@ -170,6 +199,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-OK "Backend deployed successfully after readiness check."
 
+
 # Step 5: Show pods
 Write-Info "Getting pods in namespace '$Namespace'..."
 kubectl get pods -n $Namespace
@@ -177,6 +207,16 @@ kubectl get pods -n $Namespace
 # Step 6: Show services
 Write-Info "Getting services in namespace '$Namespace'..."
 kubectl get service -n $Namespace
+
+# Step 6.5: Apply HPA for api-gateway
+Write-Host "STEP 6.5: Apply HPA for api-gateway"
+try {
+    kubectl delete hpa api-gateway -n $namespace --ignore-not-found
+    kubectl autoscale deployment api-gateway --cpu-percent=30 --min=1 --max=5 -n $namespace
+    Write-Host "✅ HPA for api-gateway created successfully"
+} catch {
+    Write-Warning "⚠️ Failed to apply HPA: $($_.Exception.Message)"
+}
 
 # Step 7: Check if ALB and frontend are accessible
 Write-Info "Checking access to NodePort services..."
@@ -336,7 +376,7 @@ Write-Host "`nSending 100 POST requests to api-gateway... Error 429 Too many req
 $uri = "http://localhost:8081/submit"
 $headers = @{ "Content-Type" = "application/json" }
 
-for ($i = 1; $i -le 100; $i++) {
+for ($i = 1; $i -le 500; $i++) {
     $body = @{ message = "Test $i" } | ConvertTo-Json
 
     try {

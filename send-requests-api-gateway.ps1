@@ -1,7 +1,7 @@
 $uri = "http://localhost:8081/submit"
 $headers = @{ "Content-Type" = "application/json" }
 
-for ($i = 1; $i -le 100; $i++) {
+for ($i = 1; $i -le 500; $i++) {
     $body = @{ message = "Test $i" } | ConvertTo-Json
 
     try {

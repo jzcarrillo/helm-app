@@ -49,7 +49,7 @@ app.get('/metrics', async (req, res) => {
 // === Rate limiter
 const submitLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 20,
+  max: 100,
   handler: (req, res) => {
     throttledRequests.inc({ route: '/submit' });
     res.status(429).json({ message: 'Too many requests to /submit' });
