@@ -19,6 +19,21 @@ function Require-Command ($cmd) {
 Require-Command helm
 Require-Command kubectl
 
+# --- CLEANUP EXISTING PORT-FORWARD PROCESSES ---
+Write-Info "Cleaning up any existing 'kubectl port-forward' processes..."
+Get-Process | Where-Object {
+    $_.ProcessName -eq "kubectl" -and $_.Path -match "kubectl" -and $_.StartInfo.Arguments -match "port-forward"
+} | ForEach-Object {
+    try {
+        Stop-Process -Id $_.Id -Force
+        Write-OK "Stopped kubectl port-forward process (PID: $($_.Id))"
+    } catch {
+        Write-Warn "Could not stop kubectl port-forward process with PID $($_.Id)"
+    }
+}
+
+Start-Sleep -Seconds 2
+
 # --- CLEANUP STEP ---
 Write-Info "Cleaning up namespace '$Namespace' to remove conflicting resources..."
 helm uninstall $ReleaseName -n $Namespace | Out-Null
@@ -30,7 +45,7 @@ Write-Info "Ensuring namespace '$Namespace' is clean..."
 kubectl delete namespace $Namespace --ignore-not-found
 kubectl wait --for=delete ns/$Namespace --timeout=60s 2>$null
 kubectl create namespace $Namespace
-Write-OK "✅ Namespace '$Namespace' cleaned and recreated."
+Write-OK "Namespace '$Namespace' cleaned and recreated."
 
 # Step 1: Uninstall existing release
 Write-Info "Uninstalling existing release '$ReleaseName' from namespace '$Namespace'..."
@@ -52,7 +67,7 @@ $services = @(
     "rabbitmq",
     "lambda-consumer",
     "backend",
-    "redis,"
+    "redis",
     "postgres"
 )
 
@@ -90,43 +105,70 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-OK "Dry-run successful."
 
-# Step 3.5: Check if backend deployment and pods are fully deleted before proceeding
-Write-Info "Verifying that 'backend' deployment and pods are fully deleted before real install..."
+# Step 4: Install everything EXCEPT backend
+Write-Info "Installing non-backend components first..."
 
-$maxWaitSeconds = 60
-$waitInterval = 3
-$elapsed = 0
+helm upgrade --install $ReleaseName $ChartPath -n $Namespace `
+  --set backendService.enabled=false `
+  --wait --debug
 
-while ($true) {
-    # Check deployment existence
-    $backendDeployment = kubectl get deployment backend -n $Namespace --ignore-not-found
-
-    # Check pods in Terminating state for backend
-    $backendPodsTerminating = kubectl get pods -n $Namespace -l app=backend --field-selector=status.phase=Terminating --ignore-not-found
-
-    if (-not $backendDeployment -and -not $backendPodsTerminating) {
-        Write-OK "'backend' deployment and terminating pods not found. Safe to proceed."
-        break
-    }
-
-    if ($elapsed -ge $maxWaitSeconds) {
-        Write-Err "'backend' deployment or terminating pods still exist after waiting $maxWaitSeconds seconds. Aborting."
-        exit 1
-    }
-
-    Write-Info "'backend' deployment or terminating pods still exist. Waiting..."
-    Start-Sleep -Seconds $waitInterval
-    $elapsed += $waitInterval
-}
-
-# Step 4: Real Helm install or upgrade
-Write-Info "Performing Helm upgrade --install..."
-helm upgrade --install $ReleaseName $ChartPath -n $Namespace --wait --debug
 if ($LASTEXITCODE -ne 0) {
-    Write-Err "Helm upgrade/install failed. Aborting."
+    Write-Err "Initial Helm upgrade/install failed. Aborting."
     exit 1
 }
+Write-OK "Initial Helm install successful (backend excluded)."
 Write-OK "Helm release '$ReleaseName' installed successfully."
+
+
+# Step 4.1: Wait for Redis and PostgreSQL to be ready
+Write-Info "`n[STEP 4.1] Waiting for Redis and PostgreSQL readiness..."
+
+# Redis readiness check
+$redisPod = kubectl get pods -n helm-app -l app=redis -o jsonpath="{.items[0].metadata.name}"
+$redisReady = $false
+for ($i = 1; $i -le 10; $i++) {
+    $pingResult = kubectl exec -n helm-app $redisPod -- redis-cli ping
+    if ($pingResult -eq "PONG") {
+        $redisReady = $true
+        break
+    }
+    Start-Sleep -Seconds 3
+}
+if (-not $redisReady) {
+    Write-Err "Redis not ready after retries. Aborting."
+    exit 1
+}
+Write-OK "Redis is ready."
+
+# PostgreSQL readiness check
+$pgPod = kubectl get pods -n helm-app -l app=postgres -o jsonpath="{.items[0].metadata.name}"
+$pgReady = $false
+for ($i = 1; $i -le 10; $i++) {
+    $pgCheckCmd = "PGPASSWORD=mypass psql -U myuser -d mydb -c '\q'"
+    $output = kubectl exec -n helm-app $pgPod -- /bin/sh -c $pgCheckCmd
+    if ($LASTEXITCODE -eq 0) {
+        $pgReady = $true
+        break
+    }
+    Start-Sleep -Seconds 3
+}
+if (-not $pgReady) {
+    Write-Err "PostgreSQL not ready after retries. Aborting."
+    exit 1
+}
+Write-OK "PostgreSQL is ready."
+
+# Step 4.2: Deploy backend now that dependencies are ready
+Write-Info "`n[STEP 4.2] Deploying backend now that Redis and PostgreSQL are ready..."
+helm upgrade --install $ReleaseName $ChartPath -n $Namespace `
+  --set backendService.enabled=true `
+  --wait --debug
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Err "Backend install failed. Aborting."
+    exit 1
+}
+Write-OK "Backend deployed successfully after readiness check."
 
 # Step 5: Show pods
 Write-Info "Getting pods in namespace '$Namespace'..."
@@ -173,7 +215,7 @@ $portForwardLambda = Start-Process -FilePath "kubectl" `
 # Wait a moment to ensure port-forwards are established
 
 Write-Host "Port-forwarding redis on port 6379..."
-$portForwardLambda = Start-Process -FilePath "kubectl" `
+$portForwardRedis = Start-Process -FilePath "kubectl" `
   -ArgumentList "port-forward", "svc/redis", "6379:6379", "-n", "helm-app" `
   -NoNewWindow -PassThru  
 # Wait a moment to ensure port-forwards are established
@@ -313,40 +355,5 @@ for ($i = 1; $i -le 100; $i++) {
     Start-Sleep -Milliseconds 500  # Throttle interval between requests
 }
 
-# Step X: Check Redis Health
-Write-Host "[INFO] Checking Redis health..." -ForegroundColor Cyan
 
-# Get the Redis pod name dynamically
-$redisPod = kubectl get pods -n helm-app -l app=redis -o jsonpath="{.items[0].metadata.name}"
-
-if (-not $redisPod) {
-    Write-Error "Redis pod not found."
-    exit 1
-}
-
-# Run 'redis-cli ping' inside the pod
-$pingResult = kubectl exec -n helm-app $redisPod -- redis-cli ping
-
-if ($pingResult -eq "PONG") {
-    Write-Host "[OK] Redis is healthy (PONG received)." -ForegroundColor Green
-}
-else {
-    Write-Error "Redis did not respond with PONG. Result: $pingResult"
-    exit 1
-}
-
-# Get the PostgreSQL pod name
-$pgPod = kubectl get pods -n helm-app -l app=postgres -o jsonpath="{.items[0].metadata.name}"
-
-# Run 'psql' command inside the pod to test connection
-$pgCheckCmd = "PGPASSWORD=mypass psql -U myuser -d mydb -c '\q'"
-$pgResult = kubectl exec -n helm-app $pgPod -- sh -c $pgCheckCmd
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "[OK] PostgreSQL is healthy (connection succeeded)." -ForegroundColor Green
-}
-else {
-    Write-Error "PostgreSQL connection failed. Output: $pgResult"
-    exit 1
-}
 

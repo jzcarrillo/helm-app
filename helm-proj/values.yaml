@@ -104,6 +104,7 @@ lambdaConsumer:
   rabbitmqUrl: amqp://myuser:mypass@rabbitmq.helm-app.svc.cluster.local:5672
 
 backendService:
+  enabled: true
   fullnameOverride: backend
   replicaCount: 1
 
@@ -111,7 +112,6 @@ backendService:
     repository: backend
     tag: latest
     pullPolicy: Never
-
   containerPort: 3000
 
   service:
@@ -119,11 +119,24 @@ backendService:
     port: 3000
     targetPort: 3000
 
-  databaseUrl: postgres://myuser:mypass@postgres.helm-app.svc.cluster.local:5432/mydb
+  # databaseUrl: postgres://myuser:mypass@postgres.helm-app.svc.cluster.local:5432/mydb
 
   redis:
     host: redis.helm-app.svc.cluster.local
     port: 6379
+    wait:
+      enabled: true
+      interval: 2
+      timeout: 60
+
+  postgres:
+    host: postgres.helm-app.svc.cluster.local
+    port: 5432
+    wait:
+      enabled: true
+      interval: 2
+      timeout: 60
+
 
 redis:
   fullnameOverride: redis

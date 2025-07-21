@@ -1,3 +1,4 @@
+{{- if .Values.backendService.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,3 +29,5 @@ spec:
               value: "{{ .Values.backendService.redis.host }}"
             - name: REDIS_PORT
               value: "{{ .Values.backendService.redis.port }}"
+              restartPolicy: Always
+{{- end }}
