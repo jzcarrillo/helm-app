@@ -8,3 +8,9 @@ metadata:
 data:
   api-gateway-dashboard.json: |
 {{ .Files.Get "dashboards/api-gateway-dashboard.json" | indent 4 }}
+
+  api-gateway-dashboard2.json: |
+{{ .Files.Get "dashboards/api-gateway-dashboard2.json" | indent 4 }}
+
+  api-gateway-dashboard3.json: |
+{{ .Files.Get "dashboards/api-gateway-dashboard3.json" | indent 4 }}

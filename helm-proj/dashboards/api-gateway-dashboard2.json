@@ -1,6 +1,6 @@
 {
   "id": null,
-  "title": "High CPU Usage",
+  "title": "Replica Count",
   "tags": ["auto", "api-gateway"],
   "timezone": "browser",
   "schemaVersion": 36,
@@ -8,14 +8,13 @@
   "refresh": "10s",
   "panels": [
     {
-      "title": "High CPU Usage",
-      "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "title": "Replica Count",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 9, "w": 24, "h": 5 },
       "targets": [
         {
-          "expr": "rate(process_cpu_seconds_total{job=\"api-gateway\"}[1m])",
-          "legendFormat": "CPU Usage",
-          "interval": ""
+          "expr": "count(up{job=\"api-gateway\"})",
+          "legendFormat": "Pod Count"
         }
       ],
       "datasource": {
