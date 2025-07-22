@@ -33,7 +33,7 @@ Get-Process | Where-Object {
 }
 
 # List of ports to clean up
-$ports = @(3000, 4000, 4001, 5672, 6379, 8081, 15672, 9090, 9093, 3200)
+$ports = @(3000, 4000, 4001, 5672, 6379, 8081, 15672, 9090, 9093, 3000)
 
 foreach ($port in $ports) {
     Write-Host "Checking port $port..."
@@ -275,9 +275,9 @@ $portForwardAlertmanager = Start-Process -FilePath "kubectl" `
   -ArgumentList "port-forward", "svc/alertmanager", "9093:9093", "-n", "helm-app" `
   -NoNewWindow -PassThru   
 
-Write-Host "Port-forwarding grafana on port 3200..."
+Write-Host "Port-forwarding grafana on port 3000..."
 $portForwardAlertmanager = Start-Process -FilePath "kubectl" `
-  -ArgumentList "port-forward", "svc/grafana", "3200:32000", "-n", "helm-app" `
+  -ArgumentList "port-forward", "svc/grafana", "3000:32000", "-n", "helm-app" `
   -NoNewWindow -PassThru    
 
 # Wait a moment to ensure port-forwards are established

@@ -209,7 +209,7 @@ prometheus:
     enabled: true
     clusterRoleName: prometheus-cluster-role
     clusterRoleBindingName: prometheus-cluster-rolebinding
-    createClusterRole: false
+    createClusterRole: true
 
   service:
     type: NodePort
@@ -299,17 +299,17 @@ grafana:
 
   service:
     type: NodePort       # Can be ClusterIP, NodePort, or LoadBalancer
-    port: 3200
-    targetPort: 3200
+    port: 3000
+    targetPort: 3000
     nodePort: 32000
 
   configMap:
     datasources: grafana-datasources
-    dashboards: grafanadashboard-config         # Contains dashboards.yaml for provisioning
-    definitions: api-gateway-dashboard          # Contains the JSON dashboard definition
+    dashboards: grafana-api-dashboard-config        # Contains dashboards.yaml for provisioning
+    definitions: api-gateway-dashboard           # Contains the JSON dashboard definition
 
   # Optional: if using dashboard provisioner
   dashboards:
-    refreshInterval: 10s
+    refreshInterval: "10s"
     defaultTimezone: browser
     schemaVersion: 36
