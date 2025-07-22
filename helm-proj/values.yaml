@@ -289,3 +289,27 @@ alertmanager:
     name: email-alerts
     email:
       to: johnchristopher.carrillo@gmail.com
+
+grafana:
+  replicaCount: 1
+
+  image:
+    repository: grafana/grafana
+    tag: latest
+
+  service:
+    type: NodePort       # Can be ClusterIP, NodePort, or LoadBalancer
+    port: 3200
+    targetPort: 3200
+    nodePort: 32000
+
+  configMap:
+    datasources: grafana-datasources
+    dashboards: grafanadashboard-config         # Contains dashboards.yaml for provisioning
+    definitions: api-gateway-dashboard          # Contains the JSON dashboard definition
+
+  # Optional: if using dashboard provisioner
+  dashboards:
+    refreshInterval: 10s
+    defaultTimezone: browser
+    schemaVersion: 36

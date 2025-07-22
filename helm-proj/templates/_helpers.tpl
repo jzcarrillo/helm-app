@@ -158,3 +158,24 @@ Always return just "alertmanager" as the fullname — no release name prefix
 {{- define "alertmanager.fullname" -}}
 alertmanager
 {{- end }}
+
+{{/*
+Always return just "grafana" as the name
+*/}}
+{{- define "grafana.name" -}}
+grafana
+{{- end }}
+
+{{/*
+Always return just "grafana" as the fullname — no release name prefix
+*/}}
+{{- define "grafana.fullname" -}}
+grafana
+{{- end }}
+
+{{/*
+Return the name of the Grafana datasource ConfigMap
+*/}}
+{{- define "grafana.datasource.ConfigMapName" -}}
+grafana-datasources
+{{- end }}

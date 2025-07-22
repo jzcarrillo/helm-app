@@ -33,7 +33,7 @@ Get-Process | Where-Object {
 }
 
 # List of ports to clean up
-$ports = @(3000, 4000, 4001, 5672, 6379, 8081, 15672, 9090, 9093)
+$ports = @(3000, 4000, 4001, 5672, 6379, 8081, 15672, 9090, 9093, 3200)
 
 foreach ($port in $ports) {
     Write-Host "Checking port $port..."
@@ -99,7 +99,8 @@ $services = @(
     "redis",
     "postgres",
     "prometheus",
-    "alertmanager"
+    "alertmanager",
+    "grafana"
 )
 
 foreach ($service in $services) {
@@ -215,7 +216,7 @@ Write-Host "STEP 6.5: Apply HPA for api-gateway"
 try {
     kubectl delete hpa api-gateway -n $namespace --ignore-not-found
     kubectl autoscale deployment api-gateway --cpu-percent=30 --min=1 --max=5 -n $namespace
-    Write-Host "✅ HPA for api-gateway created successfully"
+    Write-Host "HPA for api-gateway created successfully"
 } catch {
     Write-Warning "⚠️ Failed to apply HPA: $($_.Exception.Message)"
 }
@@ -228,7 +229,7 @@ $albPort = kubectl get svc alb-nginx -n $Namespace -o=jsonpath="{.spec.ports[0].
 $frontendPort = kubectl get svc frontend -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 $prometheusPort = kubectl get svc prometheus -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 $apigatewayPort = kubectl get svc api-gateway -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
-$prometheusPort = kubectl get svc api-gateway -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
+$grafanaPort = kubectl get svc grafana -n $Namespace -o=jsonpath="{.spec.ports[0].port}" 2>$null
 
 $nodeIP = "localhost"
 
@@ -269,10 +270,15 @@ $portForwardPrometheus = Start-Process -FilePath "kubectl" `
   -ArgumentList "port-forward", "svc/prometheus", "9090:30900", "-n", "helm-app" `
   -NoNewWindow -PassThru  
 
-  Write-Host "Port-forwarding alertmanager on port 9093..."
+Write-Host "Port-forwarding alertmanager on port 9093..."
 $portForwardAlertmanager = Start-Process -FilePath "kubectl" `
   -ArgumentList "port-forward", "svc/alertmanager", "9093:9093", "-n", "helm-app" `
   -NoNewWindow -PassThru   
+
+Write-Host "Port-forwarding grafana on port 3200..."
+$portForwardAlertmanager = Start-Process -FilePath "kubectl" `
+  -ArgumentList "port-forward", "svc/grafana", "3200:32000", "-n", "helm-app" `
+  -NoNewWindow -PassThru    
 
 # Wait a moment to ensure port-forwards are established
 Start-Sleep -Seconds 3
@@ -437,7 +443,7 @@ for ($i = 1; $i -le 500; $i++) {
 }
 
 # STEP 13: Scale API Gateway Deployment to 4 Replicas
-Write-Host "STEP 9: Scale API Gateway Deployment to 4 Replicas"
+Write-Host "STEP 13: Scale API Gateway Deployment to 4 Replicas"
 try {
     kubectl scale deployment api-gateway -n $Namespace --replicas=4
     Write-Host "Successfully scaled api-gateway to 4 replicas" -ForegroundColor Green
