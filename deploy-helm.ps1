@@ -482,6 +482,8 @@ Write-Host "`n Sending 500 HTTP requests to http://localhost:80"
     } catch {
         Write-Host "[$_] HTTP blocked as expected"
     }
+
+    Start-Sleep -Milliseconds 100
 }
 
 Write-Host "`nDeployment and Verification Complete." -ForegroundColor Cyan
