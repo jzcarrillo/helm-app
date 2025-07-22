@@ -496,4 +496,3 @@ Start-Process powershell -ArgumentList @(
     "-Command",
     $command
 )
-

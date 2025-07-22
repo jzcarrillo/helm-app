@@ -1,4 +1,4 @@
-$command = "kubectl get hpa -n helm-app --watch"
+$command = "kubectl get hpa -n $namespace --watch"
 
 Write-Host "Watching HPA scaling behavior in another new terminal..."
 Start-Process powershell -ArgumentList @(
